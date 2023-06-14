@@ -1,0 +1,291 @@
+
+# Devstack 部署 OpenStack
+
+试验发现在 Host 为 Ubuntu20.04 和 22.04 上无法顺利安装 VirtualBox，请在 Ubuntu18.04 上安装 VirtualBox。虚拟机镜像版本为 Ubuntu20.04，以下步骤可以稳定复现，OpenStack master（c424a7a299e37004d318107648bb18e157344985）版本。
+
+总而言之，在 18.04 版本上安装 VirtualBox，在 20.04 版本上安装 OpenStack。
+
+因为安装 OpenStack 容易破话系统包依赖，如果为了学习建议在虚拟机中安装。
+
+安装过程中需要下载镜像，请确认机器可以访问外网。
+
+## 安装 VirtualBox
+
+
+```Bash
+sudo apt update
+sudo apt install virtualbox virtualbox-ext-pack
+```
+
+## 确认 VirtualBox 配置
+
+请确认 VirtualBox 配置如下，VirtualBox 默认配置硬盘为 10G，远远不够用，为了避免后续的麻烦，请确认如下配置：
+
+磁盘大于 50G
+
+内存大于 16G
+
+CPU 大于 4 个
+
+## 下载镜像并安装
+
+镜像可以使用内网仓库的镜像，下载速度特别快。<http://10.12.8.218/ISO/。>
+
+
+## 更新源
+
+```Bash
+sudo mv /etc/apt/sources.list /etc/apt/sources.list.bk && sudo bash -c "cat << EOF > /etc/apt/sources.list
+deb http://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-security main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy-security main restrcdicted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-updates main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy-updates main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-proposed main restrcd && mkdir .pip && cd .pipicted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy-proposed main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted universe multiverse
+EOF"
+```
+
+### 备用源 (以备不时之需)
+
+```Bash
+sudo mv /etc/apt/sources.list /etc/apt/sources.list.bk && sudo bash -c "cat << EOF > /etc/apt/sources.list
+deb http://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-security main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy-security main restrcdicted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-updates main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy-updates main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-proposed main restrcd && mkdir .pip && cd .pipicted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy-proposed main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted universe multiverse
+EOF"
+```
+
+```Bash
+sudo mv /etc/apt/sources.list /etc/apt/sources.list.bk && sudo bash -c "cat << EOF > /etc/apt/sources.list
+deb https://mirrors.aliyun.com/ubuntu/ trusty main restricted universe multiverse
+deb-src https://mirrors.aliyun.com/ubuntu/ trusty main restricted universe multiverse
+deb https://mirrors.aliyun.com/ubuntu/ trusty-security main restricted universe multiverse
+deb-src https://mirrors.aliyun.com/ubuntu/ trusty-security main restricted universe multiverse
+
+deb https://mirrors.aliyun.com/ubuntu/ trusty-updates main restricted universe multiverse
+deb-src https://mirrors.aliyun.com/ubuntu/ trusty-updates main restricted universe multiverse
+
+deb https://mirrors.aliyun.com/ubuntu/ trusty-backports main restricted universe multiverse
+deb-src https://mirrors.aliyun.com/ubuntu/ trusty-backports main restricted universe multiverse
+EOF"
+```
+
+```Bash
+sudo mv /etc/apt/sources.list /etc/apt/sources.list.bk && sudo bash -c "cat << EOF > /etc/apt/sources.list
+deb http://mirrors.aliyun.com/ubuntu/ xenial main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ xenial-security main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ xenial-updates main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ xenial-proposed main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ xenial-backports main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial-security main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial-updates main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial-proposed main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial-backports main restricted universe multiverse
+EOF"
+
+```
+
+## 安装基础包
+
+```Bash
+sudo apt update
+sudo apt install git
+sudo apt install aptitude
+```
+
+aptitude 用于解决包依赖冲突。
+
+## 添加用户
+添加 stack 用户
+```Bash
+sudo useradd -s /bin/bash -d /opt/stack -m stack
+```
+
+授予 sudo 权限
+
+```Bash
+echo "stack ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/stack
+```
+
+切换到 stack 用户
+
+```Bash
+sudo su -  stack
+```
+
+## PIP 配置
+
+```text
+cd && mkdir -p  .pip && cd .pip && bash -c "cat << EOF > ~/.pip/pip.conf
+[global]
+timeout = 6000
+index-url = http://mirrors.aliyun.com/pypi/simple/
+trusted-host = mirrors.aliyun.com
+EOF"
+```
+
+
+## 仓库下载
+
+```Bash
+git clone https://github.com/openstack/devstack --depth 1
+```
+
+
+
+### 配置 local.conf
+
+只需要修改 HOST_IP，其他的可以不用修改，HOST_IP 为本机 IP 地址，可以使用 ifconfig 查看。如果是虚拟机就是虚拟机的 IP，virtualbox 创建的虚拟机默认为 10.0.2.15。
+
+```Bash
+cd devstack && touch local.conf && bash -c "cat << EOF > /opt/stack/devstack/local.conf
+[[local|localrc]]
+HOST_IP=10.0.2.15
+GIT_BASE=http://git.trystack.cn
+
+ADMIN_PASSWORD=user
+DATABASE_PASSWORD=$ADMIN_PASSWORD
+RABBIT_PASSWORD=$ADMIN_PASSWORD
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+EOF"
+```
+
+## 安装
+
+```Bash
+FORCE=yes ./stack.sh
+```
+
+# BUG 解决
+
+## systemd 包依赖冲突
+
+```Bash
+sudo aptitude install systemd
+选择N
+再选择Y
+```
+
+## ModuleNotFoundError: No module named 'distutils.cmd'
+
+```text
+ sudo apt-get install python3.10-distutils
+ # 根据自己的 Python 版本决定，可以 python3.7-distutils python3.8-distutils   ....都试一遍
+```
+
+## apparmor invalid capability bpf
+
+```Bash
+sudo apt install apparmor
+```
+
+## No tenant network is available for allocation.
+
+```Bash
+vim /etc/neutron/plugins/ml2/ml2_conf.ini
+
+[ml2]
+type_drivers = flat,vlan,vxlan
+tenant_network_types = vxlan
+
+[ml2_type_vxlan]
+vni_ranges = 1:1000
+
+```
+
+## unix:/var/run/openvswitch/db.sock: database connection failed (Connection refused)
+
+```Bash
+cd  /opt/stack/devstack/lib/neutron_plugin 
+vi ovn_agent 
+116G  跳转到116行
+OVS_RUNDIR=$OVS_PREFIX/var/run/openvswitch 修改为OVS_RUNDIR=$OVS_PREFIX/var/run/ovn 
+sudo rm -rf /var/run/ovn
+
+```
+
+## VirtualBox 启动报错 : Failed to send host log message
+
+```Bash
+Ctrl+F2进入另一个终端
+输入：startx进入桌面
+```
+
+
+## AttributeError: module ‘collections‘ has no attribute ‘MutableMapping‘
+
+```text
+collections.MutableMapping
+collections.abc.MutableMapping
+```
+
+## ModuleNotFoundError: No module named 'distutils.core'
+
+```text
+sudo apt install python3-pip
+```
+
+## ERROR: Cannot uninstall 'simplejson'. It is a distutils installed project and thus we cannot 
+
+```text
+sudo pip install --ignore-installed wrapt enum34 simplejson netaddr
+```
+
+## server certificate verification failed. CAfile: none CRLfile: none
+
+```Bash
+git config --global http.sslverify false
+git config --global https.sslverify false
+```
+
+## Ubuntu:登录页面验证出错
+
+
+```bash
+sudo loginctl unlock-sessions
+```
+
+
+## Ubuntu:重装桌面
+
+```bash
+sudo apt install ubuntu-desktop
+```
+
+## Ubuntu 登录界面 Authentication Error 
+
+```bash
+sudo loginctl unlock-sessions
+sudo echo "fs.inotify.max_user_watches=524288" >> /etc/sysctl.conf
+
+```
+
+## Ubuntu 无法进入桌面系统，但是可以 SSH 链接
+
+```Bash
+sudo rm -rf /var/lib/apt/lists/*
+sudo apt-get clean
+sudo apt-get update
+sudo apt-get install --reinstall appstream
+```
+
+## gsettings-desktop-schemas : 破坏：mutter (＜ 3.31.4) 但是 3.28.4-0ubuntu18.04.2 正要被安装解决方案
+
+```Java
+sudo apt install gsettings-desktop-schemas
+sudo apt-get install build-essential
+```
+
+
