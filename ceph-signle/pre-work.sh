@@ -23,6 +23,7 @@ ceph auth get-or-create client.glance mon 'allow r' osd 'allow class-read object
 ceph auth get-or-create client.cinder -o /etc/ceph/ceph.client.cinder.keyring
 ceph auth get-or-create client.glance -o /etc/ceph/ceph.client.glance.keyring
 
+cd 
 ceph auth get-key client.cinder -o client.cinder.key
 uuidgen > uuid-secret.txt
 
