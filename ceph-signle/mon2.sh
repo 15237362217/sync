@@ -13,4 +13,3 @@ sudo docker run -itd \
 	-v /myceph/mon2/var/lib/ceph/:/var/lib/ceph/ \
 	-v /myceph/mon2/var/log/ceph/:/var/log/ceph/ \
 	ceph/daemon mon
-
