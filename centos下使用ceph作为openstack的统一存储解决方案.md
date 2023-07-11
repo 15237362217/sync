@@ -521,7 +521,13 @@ ceph客户端检验
 ceph的dashboard检验
 
 ![](C:\Users\e0005105\AppData\Roaming\marktext\images\2023-06-28-16-35-47-image.png)
-
+##### nova检验
+openstack image  list查看可用镜像
+openstack network list查看可用网络
+openstack flavor list查看类型
+```shell
+openstack server create --image cirros-ceph --flavor m1.tiny --nic net-id=network-uuid nova-ceph-test
+```
 # 
 
 ### 4 openstack swift对接ceph RGW对象存储
