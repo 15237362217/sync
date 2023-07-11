@@ -27,7 +27,6 @@ cd
 ceph auth get-key client.cinder -o client.cinder.key
 uuidgen > uuid-secret.txt
 
-
 cat > secret.xml <<EOF
 <secret ephemeral='no' private='no'>
   <uuid>`cat uuid-secret.txt`</uuid>
@@ -39,3 +38,10 @@ EOF
 
 virsh secret-define --file secret.xml
 virsh secret-set-value --secret $(cat uuid-secret.txt) --base64 $(cat client.cinder.key)
+
+#relace glance-api.conf cinder.conf nova.conf ceph.conf
+#replace UUID
+
+systemctl restart openstack-cinder-volume
+systemctl restart openstack-glance-api
+systemctl restart openstack-nova-compute
